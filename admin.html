@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - KTN</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', sans-serif; }
+  body { background:#f3f6fb; padding:20px; display: flex; justify-content: center; }
+  .container { width: 100%; max-width: 900px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+  h2 { color: #1e3a8a; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; font-size: 22px; }
+  h3 { margin-bottom: 15px; color: #334155; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .box { border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 20px; background: #f8fafc; }
+  input, textarea, select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 14px; outline: none; background: white; }
+  input:focus, select:focus { border-color: #2563eb; }
+  input[type="file"] { padding: 8px; background: #f1f5f9; }
+  button { background: #2563eb; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 15px; }
+  button:hover { background: #1d4ed8; }
+  .back { color: #2563eb; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 10px; font-size: 14px; }
+  @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } .container { padding: 15px; } }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h2><i class="fa-solid fa-gear"></i> Panel Admin - Kampus Terpadu Nusantara</h2>
+
+    <div class="grid-2">
+      <!-- TUGAS -->
+      <div class="box">
+        <h3><i class="fa-solid fa-file-lines"></i> Tambah Tugas (Upload File)</h3>
+        <input type="text" id="tMatkul" placeholder="Mata Kuliah">
+        <input type="text" id="tJudul" placeholder="Judul Tugas">
+        <input type="text" id="tBatas" placeholder="Batas Waktu">
+        <label style="font-size:12px; font-weight:bold; color:#475569;">Upload Soal (PDF/DOCX Maks 1MB)</label>
+        <input type="file" id="tFile" accept=".pdf,.doc,.docx">
+        <button onclick="addTugas()" id="btnTugas"><i class="fa-solid fa-plus"></i> Simpan Tugas</button>
+      </div>
+
+      <!-- MATERI -->
+      <div class="box">
+        <h3><i class="fa-solid fa-book"></i> Tambah Materi (Upload File)</h3>
+        <select id="mMatkul">
+          <option value="">-- Pilih Mata Kuliah --</option>
+          <option value="Struktur Data">Struktur Data</option>
+          <option value="Cloud Computing">Cloud Computing</option>
+          <option value="Basis Data">Basis Data</option>
+        </select>
+        <select id="mSesi">
+          <option value="">-- Pilih Sesi --</option>
+          <script>for(let i=1; i<=16; i++) document.write(`<option value="${i}">Sesi ${i}</option>`);</script>
+        </select>
+        <input type="text" id="mJudul" placeholder="Judul Materi">
+        <label style="font-size:12px; font-weight:bold; color:#475569;">Upload File Materi (PDF/PPT Maks 1MB)</label>
+        <input type="file" id="mFile" accept=".pdf,.ppt,.pptx,.doc,.docx">
+        <button onclick="addMateri()" id="btnMateri"><i class="fa-solid fa-plus"></i> Simpan Materi</button>
+      </div>
+
+      <!-- PENGUMUMAN -->
+      <div class="box">
+        <h3><i class="fa-solid fa-bullhorn"></i> Tambah Pengumuman</h3>
+        <input type="text" id="pJudul" placeholder="Judul Pengumuman">
+        <textarea id="pIsi" placeholder="Isi Pengumuman" rows="3"></textarea>
+        <button onclick="addPengumuman()"><i class="fa-solid fa-plus"></i> Simpan Pengumuman</button>
+      </div>
+
+      <!-- NILAI -->
+      <div class="box">
+        <h3><i class="fa-solid fa-chart-simple"></i> Input Nilai Mahasiswa</h3>
+        <input type="text" id="nNim" placeholder="Masukkan NIM Mahasiswa">
+        <input type="number" id="nTugas" placeholder="Nilai Tugas">
+        <input type="number" id="nUts" placeholder="Nilai UTS">
+        <input type="number" id="nUas" placeholder="Nilai UAS">
+        <button onclick="addNilai()"><i class="fa-solid fa-plus"></i> Simpan Nilai</button>
+      </div>
+    </div>
+
+    <a href="dashboard.html" class="back"><i class="fa-solid fa-arrow-left"></i> Kembali ke Dashboard</a>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push, update, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyATjBmA_HxZIIDk6IRuGyEuFErWbO8ApqA",
+      authDomain: "ucb-lms-15e1c.firebaseapp.com",
+      databaseURL: "https://ucb-lms-15e1c-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "ucb-lms-15e1c",
+      storageBucket: "ucb-lms-15e1c.firebasestorage.app",
+      messagingSenderId: "779828146972",
+      appId: "1:779828146972:web:23516e45351885ea4b00d9",
+      measurementId: "G-6LSD1QE262"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const currentUser = JSON.parse(localStorage.getItem('ktn_currentUser') || 'null');
+    if (!currentUser || currentUser.nim !== '2024001') {
+      alert('Akses Ditolak! Anda bukan Admin.');
+      window.location.href = 'dashboard.html';
+    }
+
+    // Fungsi Konversi File ke Base64
+    function getBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+    }
+
+    window.addTugas = async function() {
+      const matkul = document.getElementById('tMatkul').value;
+      const judul = document.getElementById('tJudul').value;
+      const batas = document.getElementById('tBatas').value;
+      const fileInput = document.getElementById('tFile');
+      
+      if(!matkul || !judul || !batas) return alert('Isi data tugas!');
+      if(fileInput.files.length === 0) return alert('Pilih file soal!');
+      
+      try {
+        document.getElementById('btnTugas').innerHTML = 'Memproses File...';
+        document.getElementById('btnTugas').disabled = true;
+
+        const file = fileInput.files[0];
+        if(file.size > 1024 * 1024) return alert('File terlalu besar! Maksimal 1MB.');
+        
+        const fileBase64 = await getBase64(file);
+
+        await push(ref(db, 'tugas'), { matkul, judul, batas, fileBase64, fileName: file.name });
+        alert('Tugas berhasil ditambahkan!');
+        location.reload();
+      } catch(e) {
+        alert('Error: ' + e.message);
+        document.getElementById('btnTugas').innerHTML = 'Simpan Tugas';
+        document.getElementById('btnTugas').disabled = false;
+      }
+    }
+
+    window.addMateri = async function() {
+      const matkul = document.getElementById('mMatkul').value;
+      const sesi = document.getElementById('mSesi').value;
+      const judul = document.getElementById('mJudul').value;
+      const fileInput = document.getElementById('mFile');
+      
+      if(!matkul || !sesi || !judul) return alert('Isi data materi!');
+      if(fileInput.files.length === 0) return alert('Pilih file materi!');
+
+      try {
+        document.getElementById('btnMateri').innerHTML = 'Memproses File...';
+        document.getElementById('btnMateri').disabled = true;
+
+        const file = fileInput.files[0];
+        if(file.size > 1024 * 1024) return alert('File terlalu besar! Maksimal 1MB.');
+
+        const fileBase64 = await getBase64(file);
+        
+        await push(ref(db, 'materi'), { matkul, sesi, judul, fileBase64, fileName: file.name });
+        alert(`Materi Sesi ${sesi} berhasil diupload!`);
+        location.reload();
+      } catch(e) {
+        alert('Error: ' + e.message);
+        document.getElementById('btnMateri').innerHTML = 'Simpan Materi';
+        document.getElementById('btnMateri').disabled = false;
+      }
+    }
+
+    window.addPengumuman = async function() {
+      const judul = document.getElementById('pJudul').value;
+      const isi = document.getElementById('pIsi').value;
+      if(!judul || !isi) return alert('Isi judul dan isi pengumuman!');
+      await push(ref(db, 'pengumuman'), { judul, isi, tanggal: new Date().toLocaleDateString('id-ID') });
+      alert('Pengumuman berhasil ditambahkan!');
+      location.reload();
+    }
+
+    window.addNilai = async function() {
+      const nim = document.getElementById('nNim').value;
+      const t = document.getElementById('nTugas').value;
+      const uts = document.getElementById('nUts').value;
+      const uas = document.getElementById('nUas').value;
+      if(!nim) return alert('Masukkan NIM!');
+      try {
+        const dbRef = ref(db);
+        const snap = await get(child(dbRef, `users/${nim}`));
+        if(!snap.exists()) return alert('NIM tidak ditemukan!');
+        await update(ref(db, 'users/' + nim), { nilai_tugas: parseInt(t||0), nilai_uts: parseInt(uts||0), nilai_uas: parseInt(uas||0) });
+        alert('Nilai berhasil diupdate!');
+        location.reload();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+  </script>
+</body>
+</html>

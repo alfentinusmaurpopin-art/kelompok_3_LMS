@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - Kampus Terpadu Nusantara</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  /* ================= RESET & VARIABEL ================= */
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  :root { --primary-blue: #1e3a8a; --accent-blue: #2563eb; --bg-color: #f3f6fb; --text-dark: #1e293b; --text-gray: #64748b; --border-color: #e2e8f0; }
+  body { background-color: var(--bg-color); color: var(--text-dark); display: flex; min-height: 100vh; }
+
+  /* ================= SIDEBAR ================= */
+  .sidebar { width: 260px; background: linear-gradient(180deg, #111e38 0%, #1e3a8a 100%); color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; transition: 0.3s; box-shadow: 4px 0 15px rgba(0,0,0,0.1); }
+  .logo-container { padding: 25px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+  .logo-icon { font-size: 28px; color: #60a5fa; }
+  .logo-text h1 { font-size: 20px; letter-spacing: 1px; }
+  .logo-text p { font-size: 10px; color: #cbd5e1; margin-top: 2px; }
+  
+  .menu { list-style: none; padding: 20px 15px; flex-grow: 1; overflow-y: auto; }
+  .menu li { margin-bottom: 5px; }
+  .menu a { display: flex; align-items: center; gap: 15px; padding: 12px 15px; color: #cbd5e1; text-decoration: none; border-radius: 8px; font-size: 14.5px; font-weight: 500; transition: all 0.3s ease; cursor: pointer; }
+  .menu a:hover { background: rgba(255, 255, 255, 0.1); color: white; transform: translateX(5px); }
+  .menu a.active { background: var(--accent-blue); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); transform: none; }
+  .menu a i { width: 20px; text-align: center; font-size: 16px; }
+  .menu-bottom { padding: 0 15px 20px; list-style: none; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
+  
+  /* TOMBOL KELUAR PUTIH */
+  .btn-logout { background-color: white; color: #ef4444 !important; display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+  .btn-logout:hover { background-color: #fef2f2; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(239, 68, 68, 0.2); }
+
+  /* ================= MAIN CONTENT ================= */
+  .main-content { margin-left: 260px; flex-grow: 1; padding: 20px 30px; display: flex; flex-direction: column; gap: 20px; width: calc(100% - 260px); }
+  
+  /* ================= TOPBAR ================= */
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .search-box { display: flex; align-items: center; background: white; padding: 10px 20px; border-radius: 30px; width: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); transition: box-shadow 0.3s; }
+  .search-box:focus-within { box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2); }
+  .search-box i { color: var(--text-gray); margin-right: 10px; }
+  .search-box input { border: none; outline: none; width: 100%; font-size: 14px; background: transparent; }
+  .user-profile { display: flex; align-items: center; gap: 20px; background: white; padding: 8px 15px; border-radius: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+  .notif-icon { position: relative; color: var(--text-gray); cursor: pointer; font-size: 18px; }
+  .notif-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 10px; font-weight: bold; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+  .profile-info { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .profile-info img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); }
+  .profile-text h4 { font-size: 14px; color: var(--text-dark); }
+  .profile-text p { font-size: 12px; color: var(--text-gray); }
+
+  /* ================= HALAMAN NAVIGASI ================= */
+  .page-section { display: none; animation: fadeIn 0.4s ease; }
+  .page-section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ================= LAYOUT GRID ================= */
+  .dashboard-grid { display: grid; grid-template-columns: 2.2fr 1fr; gap: 20px; align-items: start; }
+  .left-col { display: flex; flex-direction: column; gap: 20px; }
+  .right-col { display: flex; flex-direction: column; gap: 20px; }
+
+  /* ================= 3D BOX ================= */
+  .box-3d { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+  .box-3d:hover { transform: translateY(-3px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
+
+  /* ================= HERO BANNER ================= */
+  .hero-banner { background: linear-gradient(90deg, rgba(30, 58, 138, 0.95) 0%, rgba(30, 58, 138, 0.7) 50%, rgba(30, 58, 138, 0.2) 100%), url('https://images.unsplash.com/photo-1541339907198-e08756dedf3f') center/cover; border-radius: 16px; padding: 40px; color: white; position: relative; overflow: hidden; box-shadow: 0 10px 20px rgba(30, 58, 138, 0.3); }
+  .hero-banner h2 { font-size: 28px; margin-bottom: 10px; }
+  .hero-banner p { font-size: 15px; margin-bottom: 25px; opacity: 0.9; }
+  .btn-primary { background: var(--accent-blue); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4); }
+  .btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); }
+
+  /* ================= QUICK MENU ================= */
+  .quick-menu { display: flex; justify-content: space-around; align-items: center; padding: 20px 10px; }
+  .quick-item { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; transition: transform 0.2s; }
+  .quick-item:hover { transform: scale(1.05); }
+  .quick-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .qi-blue { background: #e0f2fe; color: #0284c7; }
+  .qi-green { background: #dcfce7; color: #16a34a; }
+  .qi-purple { background: #f3e8ff; color: #9333ea; }
+  .qi-orange { background: #ffedd5; color: #ea580c; }
+  .qi-teal { background: #ccfbf1; color: #0d9488; }
+  .quick-item span { font-size: 12px; font-weight: 600; color: var(--text-dark); text-align: center; }
+
+  /* ================= SECTION HEADERS ================= */
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+  .section-header h3 { font-size: 18px; display: flex; align-items: center; gap: 10px; }
+  .section-header a { color: var(--accent-blue); font-size: 13px; text-decoration: none; font-weight: 600; }
+
+  /* ================= COURSE CARDS ================= */
+  .course-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+  .course-card { border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; background: white; transition: all 0.3s; }
+  .course-card:hover { border-color: var(--accent-blue); }
+  .course-img { height: 100px; position: relative; background-size: cover; background-position: center; }
+  .course-img-1 { background-image: url('https://images.unsplash.com/photo-1555066931-4365d14bab8c'); }
+  .course-img-2 { background-image: url('https://images.unsplash.com/photo-1451187580459-43490279c0fa'); }
+  .course-img-3 { background-image: url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31'); }
+  .course-img-4 { background-image: url('https://images.unsplash.com/photo-1517694712202-14dd9538aa97'); }
+  .course-img-5 { background-image: url('https://images.unsplash.com/photo-1461749280684-dccba630e2f6'); }
+  .course-img-6 { background-image: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085'); }
+  .course-img-7 { background-image: url('https://images.unsplash.com/photo-1504639725590-34d0984388bd'); }
+  .course-img-8 { background-image: url('https://images.unsplash.com/photo-1510915228340-29c85a43dcfe'); }
+
+  .semester-badge { position: absolute; bottom: 10px; left: 10px; background: var(--accent-blue); color: white; font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+  .course-info { padding: 12px; }
+  .course-info h4 { font-size: 13px; margin-bottom: 5px; color: var(--text-dark); }
+  .course-info .dosen { font-size: 11px; color: var(--text-gray); margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+  .progress-container { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .progress-bar { flex-grow: 1; height: 5px; background: #e2e8f0; border-radius: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent-blue); border-radius: 10px; }
+  .progress-text { font-size: 11px; font-weight: bold; color: var(--text-gray); }
+  .btn-outline { width: 100%; padding: 6px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; color: var(--accent-blue); font-weight: 600; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+  .btn-outline:hover { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+
+  /* ================= RIGHT COLUMN BOXES ================= */
+  .tugas-item { display: flex; align-items: center; gap: 15px; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+  .tugas-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .tugas-icon { width: 40px; height: 40px; background: #f3e8ff; color: #9333ea; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .tugas-info { flex-grow: 1; }
+  .tugas-info h4 { font-size: 14px; margin-bottom: 3px; }
+  .tugas-info p { font-size: 11px; color: var(--text-gray); }
+  .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-aktif { background: #dcfce7; color: #16a34a; }
+  .badge-akan { background: #ffedd5; color: #ea580c; }
+  .badge-siap { background: #f3e8ff; color: #9333ea; }
+
+  /* ================= KALENDER KECIL ================= */
+  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .calendar-header h4 { font-size: 14px; }
+  .calendar-nav { color: var(--text-gray); cursor: pointer; font-size: 12px; }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; font-size: 11px; }
+  .cal-day-name { color: var(--text-gray); font-weight: 600; margin-bottom: 5px; }
+  .cal-date { padding: 5px 0; border-radius: 6px; cursor: pointer; position: relative; }
+  .cal-date:hover { background: #f1f5f9; }
+  .cal-date.active { background: var(--accent-blue); color: white; font-weight: bold; box-shadow: 0 2px 5px rgba(37, 99, 235, 0.3); }
+  .cal-date.has-event::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 3px; height: 3px; background: #ef4444; border-radius: 50%; }
+  .cal-date.active.has-event::after { background: white; }
+
+  /* ================= TABEL NILAI & PROFIL ================= */
+  .table-data { width: 100%; border-collapse: collapse; margin-top: 15px; }
+  .table-data th { background: #f8fafc; padding: 12px 15px; text-align: left; border-bottom: 2px solid var(--border-color); font-size: 14px; color: var(--text-dark); }
+  .table-data td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); font-size: 14px; color: var(--text-gray); }
+  .table-data tr:hover td { background: #f8fafc; }
+
+  .profil-header { display: flex; align-items: center; gap: 20px; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+  .profil-avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--accent-blue); object-fit: cover; }
+  .profil-info-text h3 { color: var(--text-dark); margin-bottom: 5px; }
+  .profil-info-text p { color: var(--text-gray); font-size: 14px; }
+  
+  /* FORM EDIT PROFIL */
+  .form-edit { background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); }
+  .form-edit h4 { margin-bottom: 15px; color: var(--primary-blue); }
+  .form-edit label { display: block; font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; }
+  .form-edit input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; background: white; }
+  .form-edit input[type="file"] { padding: 8px; background: #f1f5f9; cursor: pointer; }
+  .btn-save { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+  .btn-save:hover { background: #059669; }
+
+  /* ================= SESI MATERI & UJIAN ================= */
+  .sesi-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid var(--border-color); border-radius: 10px; background: white; margin-bottom: 10px; }
+  .btn-materi { background: #eff6ff; color: var(--accent-blue); padding: 8px 15px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
+  .quiz-q { background: #f8fafc; border: 1px solid var(--border-color); padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+  .quiz-opt { display: block; padding: 10px; margin: 5px 0; border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; }
+  .quiz-opt:hover { border-color: var(--accent-blue); background: #eff6ff; }
+
+  /* ================= RESPONSIVE (HP) ================= */
+  .mobile-header { display: none; background: #1e3a8a; color: white; padding: 15px; justify-content: space-between; align-items: center; position: fixed; width: 100%; top: 0; z-index: 101; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+  .mobile-header i { font-size: 24px; cursor: pointer; }
+
+  @media (max-width: 1024px) { .course-grid { grid-template-columns: repeat(2, 1fr); } }
+  
+  @media (max-width: 768px) {
+    .mobile-header { display: flex; }
+    .sidebar { transform: translateX(-100%); top: 60px; height: calc(100vh - 60px); }
+    .sidebar.open { transform: translateX(0); }
+    .main-content { margin-left: 0; width: 100%; padding: 80px 15px 20px; }
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .course-grid { grid-template-columns: 1fr; }
+    .search-box { display: none; }
+    .topbar { justify-content: flex-end; }
+    .quick-menu { flex-wrap: wrap; gap: 15px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- HEADER KHUSUS HP (GARIS TIGA) -->
+  <div class="mobile-header">
+    <i class="fa-solid fa-bars" onclick="document.querySelector('.sidebar').classList.toggle('open')"></i>
+    <h1 style="font-size: 18px;">KTN LMS</h1>
+    <i class="fa-regular fa-user" onclick="showPage('profil', document.querySelectorAll('.menu a')[6])"></i>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo-container"><i class="fa-solid fa-graduation-cap logo-icon"></i><div class="logo-text"><h1>KTN</h1><p>Kampus Terpadu Nusantara</p></div></div>
+    <ul class="menu">
+      <li><a onclick="showPage('beranda', this)" class="active"><i class="fa-solid fa-house"></i> Beranda</a></li>
+      <li><a onclick="showPage('matkul', this)"><i class="fa-solid fa-book-open"></i> Mata Kuliah</a></li>
+      <li><a onclick="showPage('tugas', this)"><i class="fa-solid fa-file-lines"></i> Tugas</a></li>
+      <li><a onclick="showPage('ujian', this)"><i class="fa-solid fa-laptop-code"></i> Ujian</a></li>
+      <li><a onclick="showPage('nilai', this)"><i class="fa-solid fa-chart-simple"></i> Nilai</a></li>
+      <li><a onclick="showPage('pengumuman', this)"><i class="fa-solid fa-bullhorn"></i> Pengumuman</a></li>
+      <li><a onclick="showPage('profil', this)"><i class="fa-regular fa-user"></i> Profil</a></li>
+    </ul>
+    <ul class="menu-bottom">
+      <li><a href="admin.html" id="adminLink" style="display:none; color: #fbbf24; margin-bottom: 10px;"><i class="fa-solid fa-gear"></i> Panel Admin</a></li>
+      <li><a href="index.html" onclick="logout()" class="btn-logout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar</a></li>
+    </ul>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Cari materi..."></div>
+      <div class="user-profile">
+        <div class="notif-icon"><i class="fa-regular fa-bell"></i><span class="notif-badge">2</span></div>
+        <div class="profile-info" onclick="showPage('profil', document.querySelectorAll('.menu a')[6])">
+          <img src="https://randomuser.me/api/portraits/men/32.jpg" id="navAvatar">
+          <div class="profile-text"><h4 id="navUserName">Memuat...</h4><p>Mahasiswa</p></div>
+          <i class="fa-solid fa-chevron-down" style="font-size: 12px; color: #64748b;"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- ================= HALAMAN 1: BERANDA ================= -->
+    <section id="page-beranda" class="page-section active">
+      <div class="dashboard-grid">
+        <!-- KIRI -->
+        <div class="left-col">
+          <div class="hero-banner">
+            <h2>Selamat Datang, <span id="heroName">Mahasiswa</span>!</h2>
+            <p>Terus belajar dan raih prestasi terbaik di Kampus Terpadu Nusantara 🚀</p>
+            <a href="#" onclick="showPage('matkul', document.querySelectorAll('.menu a')[1])" class="btn-primary">Mulai Belajar <i class="fa-solid fa-arrow-right"></i></a>
+          </div>
+
+          <div class="box-3d quick-menu">
+            <div class="quick-item" onclick="showPage('matkul', document.querySelectorAll('.menu a')[1])"><div class="quick-icon qi-blue"><i class="fa-solid fa-book-open"></i></div><span>Akses<br>Materi</span></div>
+            <div class="quick-item" onclick="showPage('tugas', document.querySelectorAll('.menu a')[2])"><div class="quick-icon qi-green"><i class="fa-solid fa-cloud-arrow-up"></i></div><span>Kumpul<br>Tugas</span></div>
+            <div class="quick-item" onclick="showPage('ujian', document.querySelectorAll('.menu a')[3])"><div class="quick-icon qi-purple"><i class="fa-solid fa-check-to-slot"></i></div><span>Ikuti<br>Ujian</span></div>
+            <div class="quick-item" onclick="showPage('nilai', document.querySelectorAll('.menu a')[4])"><div class="quick-icon qi-orange"><i class="fa-solid fa-chart-column"></i></div><span>Lihat<br>Nilai</span></div>
+            <div class="quick-item" onclick="showPage('pengumuman', document.querySelectorAll('.menu a')[5])"><div class="quick-icon qi-teal"><i class="fa-solid fa-bullhorn"></i></div><span>Pengumuman</span></div>
+          </div>
+
+          <div class="box-3d">
+            <div class="section-header">
+              <h3><i class="fa-solid fa-graduation-cap" style="color: var(--accent-blue);"></i> Mata Kuliah Saya</h3>
+              <a href="#" onclick="showPage('matkul', document.querySelectorAll('.menu a')[1])">Lihat Semua <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div class="course-grid">
+              <div class="course-card"><div class="course-img course-img-1"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Struktur Data</h4><p class="dosen"><i class="fa-regular fa-user"></i> Selus</p><div class="progress-container"><div class="progress-bar"><div class="progress-fill" style="width: 75%;"></div></div><span class="progress-text">75%</span></div><button class="btn-outline" onclick="bukaMateri('Struktur Data')">Belajar</button></div></div>
+              <div class="course-card"><div class="course-img course-img-2"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Cloud Computing</h4><p class="dosen"><i class="fa-regular fa-user"></i> Selus</p><div class="progress-container"><div class="progress-bar"><div class="progress-fill" style="width: 40%;"></div></div><span class="progress-text">40%</span></div><button class="btn-outline" onclick="bukaMateri('Cloud Computing')">Belajar</button></div></div>
+              <div class="course-card"><div class="course-img course-img-3"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Basis Data</h4><p class="dosen"><i class="fa-regular fa-user"></i> Bonie</p><div class="progress-container"><div class="progress-bar"><div class="progress-fill" style="width: 20%;"></div></div><span class="progress-text">20%</span></div><button class="btn-outline" onclick="bukaMateri('Basis Data')">Belajar</button></div></div>
+              <div class="course-card"><div class="course-img course-img-4"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Pemrograman Web</h4><p class="dosen"><i class="fa-regular fa-user"></i> Andi</p><div class="progress-container"><div class="progress-bar"><div class="progress-fill" style="width: 60%;"></div></div><span class="progress-text">60%</span></div><button class="btn-outline" onclick="bukaMateri('Pemrograman Web')">Belajar</button></div></div>
+              <div class="course-card"><div class="course-img course-img-5"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Jaringan Komputer</h4><p class="dosen"><i class="fa-regular fa-user"></i> Citra</p><div class="progress-container"><div class="progress-bar"><div class="progress-fill" style="width: 50%;"></div></div><span class="progress-text">50%</span></div><button class="btn-outline" onclick="bukaMateri('Jaringan Komputer')">Belajar</button></div></div>
+              <div class="course-card"><div class="course-img course-img-6"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Sistem Operasi</h4><p class="dosen"><i class="fa-regular fa-user"></i> Dedi</p><div class="progress-container"><div class="progress-bar"><div class="progress-fill" style="width: 30%;"></div></div><span class="progress-text">30%</span></div><button class="btn-outline" onclick="bukaMateri('Sistem Operasi')">Belajar</button></div></div>
+              <div class="course-card"><div class="course-img course-img-7"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Kecerdasan Buatan</h4><p class="dosen"><i class="fa-regular fa-user"></i> Eka</p><div class="progress-container"><div class="progress-bar"><div class="progress-fill" style="width: 10%;"></div></div><span class="progress-text">10%</span></div><button class="btn-outline" onclick="bukaMateri('Kecerdasan Buatan')">Belajar</button></div></div>
+              <div class="course-card"><div class="course-img course-img-8"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Rekayasa Perangkat Lunak</h4><p class="dosen"><i class="fa-regular fa-user"></i> Fajar</p><div class="progress-container"><div class="progress-bar"><div class="progress-fill" style="width: 80%;"></div></div><span class="progress-text">80%</span></div><button class="btn-outline" onclick="bukaMateri('Rekayasa Perangkat Lunak')">Belajar</button></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KANAN -->
+        <div class="right-col">
+          <div class="box-3d">
+            <div class="section-header">
+              <h3><i class="fa-solid fa-clipboard-list" style="color: var(--accent-blue);"></i> Tugas Terbaru</h3>
+              <a href="#" onclick="showPage('tugas', document.querySelectorAll('.menu a')[2])">Lihat Semua <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div id="tugasBerandaList"></div>
+          </div>
+
+          <div class="box-3d">
+            <div class="section-header">
+              <h3><i class="fa-solid fa-shield-halved" style="color: var(--accent-blue);"></i> Jadwal Ujian</h3>
+            </div>
+            <div class="tugas-item" style="border: none; padding: 0;">
+              <div class="tugas-icon" style="background: #f1f5f9; color: var(--accent-blue);"><i class="fa-regular fa-calendar-days"></i></div>
+              <div class="tugas-info"><h4>Ujian Struktur Data</h4><p>15 Nov 2026 • 08:00 - 10:00</p></div>
+              <span class="badge badge-siap">Siap</span>
+            </div>
+          </div>
+
+          <!-- KALENDER KECIL DI KANAN -->
+          <div class="box-3d" style="padding: 15px;">
+            <div class="section-header" style="margin-bottom: 10px;">
+              <h3 style="font-size: 15px;"><i class="fa-regular fa-calendar" style="color: var(--accent-blue);"></i> Kalender</h3>
+            </div>
+            <div class="calendar-header">
+              <i class="fa-solid fa-chevron-left calendar-nav"></i><h4>November 2026</h4><i class="fa-solid fa-chevron-right calendar-nav"></i>
+            </div>
+            <div class="calendar-grid">
+              <div class="cal-day-name">Sen</div><div class="cal-day-name">Sel</div><div class="cal-day-name">Rab</div><div class="cal-day-name">Kam</div><div class="cal-day-name">Jum</div><div class="cal-day-name">Sab</div><div class="cal-day-name">Min</div>
+              <div></div><div></div>
+              <div class="cal-date">1</div><div class="cal-date">2</div><div class="cal-date">3</div><div class="cal-date">4</div><div class="cal-date">5</div><div class="cal-date">6</div><div class="cal-date">7</div>
+              <div class="cal-date">8</div><div class="cal-date">9</div><div class="cal-date active">10</div><div class="cal-date">11</div><div class="cal-date">12</div><div class="cal-date">13</div><div class="cal-date">14</div>
+              <div class="cal-date has-event">15</div><div class="cal-date">16</div><div class="cal-date">17</div><div class="cal-date">18</div><div class="cal-date">19</div><div class="cal-date">20</div><div class="cal-date">21</div>
+              <div class="cal-date">22</div><div class="cal-date">23</div><div class="cal-date">24</div><div class="cal-date">25</div><div class="cal-date">26</div><div class="cal-date">27</div><div class="cal-date">28</div>
+              <div class="cal-date">29</div><div class="cal-date">30</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= HALAMAN MATA KULIAH ================= -->
+    <section id="page-matkul" class="page-section">
+      <div class="box-3d">
+        <div class="section-header"><h3><i class="fa-solid fa-book-open" style="color: var(--accent-blue);"></i> Daftar Mata Kuliah</h3></div>
+        <div class="course-grid" style="grid-template-columns: repeat(2, 1fr); margin-top: 15px;">
+          <div class="course-card"><div class="course-img course-img-1"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Struktur Data</h4><p class="dosen"><i class="fa-regular fa-user"></i> Selus</p><button class="btn-outline" onclick="bukaMateri('Struktur Data')">Masuk Kelas</button></div></div>
+          <div class="course-card"><div class="course-img course-img-2"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Cloud Computing</h4><p class="dosen"><i class="fa-regular fa-user"></i> Selus</p><button class="btn-outline" onclick="bukaMateri('Cloud Computing')">Masuk Kelas</button></div></div>
+          <div class="course-card"><div class="course-img course-img-3"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Basis Data</h4><p class="dosen"><i class="fa-regular fa-user"></i> Bonie</p><button class="btn-outline" onclick="bukaMateri('Basis Data')">Masuk Kelas</button></div></div>
+          <div class="course-card"><div class="course-img course-img-4"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Pemrograman Web</h4><p class="dosen"><i class="fa-regular fa-user"></i> Andi</p><button class="btn-outline" onclick="bukaMateri('Pemrograman Web')">Masuk Kelas</button></div></div>
+          <div class="course-card"><div class="course-img course-img-5"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Jaringan Komputer</h4><p class="dosen"><i class="fa-regular fa-user"></i> Citra</p><button class="btn-outline" onclick="bukaMateri('Jaringan Komputer')">Masuk Kelas</button></div></div>
+          <div class="course-card"><div class="course-img course-img-6"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Sistem Operasi</h4><p class="dosen"><i class="fa-regular fa-user"></i> Dedi</p><button class="btn-outline" onclick="bukaMateri('Sistem Operasi')">Masuk Kelas</button></div></div>
+          <div class="course-card"><div class="course-img course-img-7"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Kecerdasan Buatan</h4><p class="dosen"><i class="fa-regular fa-user"></i> Eka</p><button class="btn-outline" onclick="bukaMateri('Kecerdasan Buatan')">Masuk Kelas</button></div></div>
+          <div class="course-card"><div class="course-img course-img-8"><span class="semester-badge">Smt 3</span></div><div class="course-info"><h4>Rekayasa Perangkat Lunak</h4><p class="dosen"><i class="fa-regular fa-user"></i> Fajar</p><button class="btn-outline" onclick="bukaMateri('Rekayasa Perangkat Lunak')">Masuk Kelas</button></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-materi" class="page-section">
+      <div class="box-3d">
+        <div class="section-header">
+          <h3><i class="fa-solid fa-book" style="color: var(--accent-blue);"></i> <span id="judulMateri">Materi Kuliah</span></h3>
+          <a href="#" onclick="showPage('matkul', document.querySelectorAll('.menu a')[1])"><i class="fa-solid fa-arrow-left"></i> Kembali</a>
+        </div>
+        <p style="color: var(--text-gray); margin-bottom: 15px;">Daftar 16 sesi perkuliahan.</p>
+        <div id="listSesi"></div>
+      </div>
+    </section>
+
+    <section id="page-tugas" class="page-section">
+      <div class="box-3d">
+        <div class="section-header"><h3><i class="fa-solid fa-file-lines" style="color: var(--accent-blue);"></i> Daftar Tugas Kuliah</h3></div>
+        <div id="tugasList"></div>
+      </div>
+    </section>
+
+    <section id="page-ujian" class="page-section">
+      <div class="box-3d">
+        <div class="section-header"><h3><i class="fa-solid fa-laptop-code" style="color: var(--accent-blue);"></i> Ujian Daring</h3></div>
+        <div id="ujianArea" style="margin-top: 15px;">
+          <form id="formUjian" onsubmit="selesaiUjian(event)"></form>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-nilai" class="page-section">
+      <div class="box-3d">
+        <div class="section-header"><h3><i class="fa-solid fa-chart-simple" style="color: var(--accent-blue);"></i> Transkrip Nilai</h3></div>
+        <div style="overflow-x: auto;">
+          <table class="table-data">
+            <tr><th>Mata Kuliah</th><th>Tugas</th><th>UTS</th><th>UAS</th><th>Rata-rata</th></tr>
+            <!-- NILAI DUMMY UNTUK 5 MK -->
+            <tr><td>Struktur Data</td><td>85</td><td>80</td><td>90</td><td style="font-weight:bold; color:blue;">85.0</td></tr>
+            <tr><td>Cloud Computing</td><td>90</td><td>88</td><td>92</td><td style="font-weight:bold; color:blue;">90.0</td></tr>
+            <tr><td>Basis Data</td><td>75</td><td>70</td><td>80</td><td style="font-weight:bold; color:blue;">75.0</td></tr>
+            <tr><td>Pemrograman Web</td><td>88</td><td>85</td><td>90</td><td style="font-weight:bold; color:blue;">87.6</td></tr>
+            <tr><td>Jaringan Komputer</td><td>80</td><td>82</td><td>85</td><td style="font-weight:bold; color:blue;">82.3</td></tr>
+          </table>
+        </div>
+        <div style="margin-top: 20px; padding: 15px; background: #eff6ff; border-radius: 8px; border-left: 4px solid var(--accent-blue);">
+          <strong>Nilai Ujian Daring Terakhir: <span id="nUjianDaring">-</span></strong>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-pengumuman" class="page-section">
+      <div class="box-3d">
+        <div class="section-header"><h3><i class="fa-solid fa-bullhorn" style="color: var(--accent-blue);"></i> Pengumuman Kampus</h3></div>
+        <div id="pengumumanList" style="margin-top: 15px;"></div>
+      </div>
+    </section>
+
+    <section id="page-profil" class="page-section">
+      <div class="box-3d">
+        <div class="section-header"><h3><i class="fa-regular fa-user" style="color: var(--accent-blue);"></i> Profil Mahasiswa</h3></div>
+        
+        <div class="profil-header">
+          <img src="https://randomuser.me/api/portraits/men/32.jpg" id="profilAvatar" class="profil-avatar">
+          <div class="profil-info-text">
+            <h3 id="profilNama">Memuat...</h3>
+            <p>Mahasiswa Aktif - Kampus Terpadu Nusantara</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+          <div><label style="font-size:12px; color:gray;">NIM</label><p id="profilNim" style="font-weight:bold;">-</p></div>
+          <div><label style="font-size:12px; color:gray;">Email</label><p id="profilEmail" style="font-weight:bold;">-</p></div>
+        </div>
+
+        <div class="form-edit">
+          <h4><i class="fa-solid fa-camera"></i> Ganti Foto Profil</h4>
+          <input type="file" id="inputFoto" accept="image/*">
+          <button class="btn-save" onclick="gantiFoto()">Upload Foto</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- SCRIPT -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue, update, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyATjBmA_HxZIIDk6IRuGyEuFErWbO8ApqA",
+      authDomain: "ucb-lms-15e1c.firebaseapp.com",
+      databaseURL: "https://ucb-lms-15e1c-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "ucb-lms-15e1c",
+      storageBucket: "ucb-lms-15e1c.firebasestorage.app",
+      messagingSenderId: "779828146972",
+      appId: "1:779828146972:web:23516e45351885ea4b00d9",
+      measurementId: "G-6LSD1QE262"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // 1. CEK LOGIN & TAMPILKAN DATA
+    const currentUser = JSON.parse(localStorage.getItem('ktn_currentUser') || 'null');
+    if (!currentUser || !currentUser.name) { 
+      window.location.href = 'index.html'; 
+    } else {
+      document.getElementById('navUserName').textContent = currentUser.name;
+      document.getElementById('heroName').textContent = currentUser.name;
+      document.getElementById('profilNama').textContent = currentUser.name;
+      document.getElementById('profilNim').textContent = currentUser.nim;
+      document.getElementById('profilEmail').textContent = currentUser.email || '-';
+      
+      if(currentUser.foto) {
+          document.getElementById('navAvatar').src = currentUser.foto;
+          document.getElementById('profilAvatar').src = currentUser.foto;
+      }
+
+      if(currentUser.nim === '2024001') {
+          document.getElementById('adminLink').style.display = 'block';
+      }
+    }
+
+    // 2. NAVIGASI
+    window.showPage = function(pageId, element) {
+      document.querySelectorAll('.page-section').forEach(page => page.classList.remove('active'));
+      document.getElementById('page-' + pageId).classList.add('active');
+      document.querySelectorAll('.menu a').forEach(link => link.classList.remove('active'));
+      if(element) element.classList.add('active');
+      document.querySelector('.sidebar').classList.remove('open');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 3. MATERI (DENGAN DATA DUMMY 4 SESI)
+    window.bukaMateri = function(namaMk) {
+      showPage('materi', null);
+      document.getElementById('judulMateri').textContent = "Materi: " + namaMk;
+      
+      const listSesi = document.getElementById('listSesi');
+      let html = '';
+
+      // Sesi 1-4 Dummy
+      for(let i=1; i<=4; i++) {
+        html += `<div class="sesi-item">
+          <div><h4>Sesi ${i}: Pengenalan ${namaMk} bagian ${i}</h4><p style="font-size:12px; color:gray;">Modul Pembelajaran</p></div>
+          <a href="#" onclick="alert('Mengunduh materi Sesi ${i}...')" class="btn-materi"><i class="fa-solid fa-download"></i> Unduh</a>
+        </div>`;
+      }
+
+      // Sesi 5-16 Kosong
+      for(let i=5; i<=16; i++) {
+        html += `<div class="sesi-item" style="opacity: 0.6;">
+          <div><h4>Sesi ${i}: Materi Belum Tersedia</h4><p style="font-size:12px; color:gray;">Menunggu upload dari Admin</p></div>
+          <button class="btn-materi" disabled style="background:#e2e8f0; color:#94a3b8; cursor:not-allowed;"><i class="fa-solid fa-lock"></i> Terkunci</button>
+        </div>`;
+      }
+
+      listSesi.innerHTML = html;
+    }
+
+    // 4. LOGOUT
+    window.logout = function() { localStorage.removeItem('ktn_currentUser'); }
+
+    // 5. GANTI FOTO
+    window.gantiFoto = function() {
+      const file = document.getElementById('inputFoto').files[0];
+      if(!file) return alert('Pilih file foto terlebih dahulu!');
+      if(file.size > 1024 * 1024) return alert('Maksimal 1MB!');
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        const base64 = e.target.result;
+        try {
+          await update(ref(db, 'users/' + currentUser.nim), { foto: base64 });
+          const updated = { ...currentUser, foto: base64 };
+          localStorage.setItem('ktn_currentUser', JSON.stringify(updated));
+          alert('Foto berhasil diperbarui!');
+          location.reload();
+        } catch(err) { alert('Error: ' + err.message); }
+      }
+      reader.readAsDataURL(file);
+    }
+
+    // 6. TAMPILKAN TUGAS (DENGAN UPLOAD FILE BASE64)
+    onValue(ref(db, 'tugas'), (snapshot) => {
+      const data = snapshot.val();
+      let htmlBeranda = '';
+      let htmlTabel = '<table class="table-data"><tr><th>Matkul</th><th>Tugas</th><th>Batas</th><th>Unduh Soal</th><th>Upload Jawaban</th></tr>';
+      
+      if (data) {
+        Object.values(data).reverse().forEach((t, i) => {
+          if(i < 2) htmlBeranda += `<div class="tugas-item"><div class="tugas-icon"><i class="fa-solid fa-file-word"></i></div><div class="tugas-info"><h4>${t.judul}</h4><p>Batas: ${t.batas}</p></div><span class="badge badge-aktif">Aktif</span></div>`;
+          
+          const linkFile = t.fileBase64 ? `<a href="${t.fileBase64}" download="${t.fileName}" style="color:blue; font-size:12px;"><i class="fa-solid fa-download"></i> Unduh</a>` : (t.link ? `<a href="${t.link}" target="_blank" style="color:blue; font-size:12px;"><i class="fa-solid fa-download"></i> Unduh</a>` : '-');
+
+          htmlTabel += `<tr>
+            <td>${t.matkul}<br><small style="color:gray;">${t.judul}</small></td>
+            <td>${t.batas}</td>
+            <td>${linkFile}</td>
+            <td>
+              <form onsubmit="kumpulTugas(event, '${t.judul}')" style="display:flex; gap:5px; align-items:center;">
+                <input type="file" id="fileJawaban_${i}" accept=".pdf,.doc,.docx" style="padding:5px; font-size:12px; margin:0; border:1px solid #ccc; border-radius:4px; width: 150px;" required>
+                <button type="submit" class="btn-primary" style="padding:5px 10px; font-size:12px; white-space:nowrap;">Kirim</button>
+              </form>
+            </td>
+          </tr>`;
+        });
+      }
+      document.getElementById('tugasBerandaList').innerHTML = htmlBeranda || '<p style="color:gray;">Belum ada tugas.</p>';
+      document.getElementById('tugasList').innerHTML = htmlTabel + '</table>';
+    });
+
+    // 7. KUMPUL TUGAS DENGAN FILE BASE64
+    window.kumpulTugas = async function(e, judulTugas) {
+      e.preventDefault();
+      const fileInput = e.target.querySelector('input[type="file"]');
+      const file = fileInput.files[0];
+      
+      if(!file) return alert('Pilih file jawaban!');
+      if(file.size > 1024 * 1024) return alert('File terlalu besar! Maksimal 1MB.');
+
+      try {
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+          const fileBase64 = event.target.result;
+          await push(ref(db, 'pengumpulan_tugas'), {
+            nim: currentUser.nim,
+            nama: currentUser.name,
+            tugas: judulTugas,
+            fileJawabanBase64: fileBase64,
+            fileName: file.name,
+            waktu: new Date().toLocaleString('id-ID')
+          });
+          alert('Tugas berhasil dikumpulkan!');
+          e.target.reset();
+        };
+        reader.readAsDataURL(file);
+      } catch(err) { alert('Error: ' + err.message); }
+    }
+
+    // 8. SOAL UJIAN
+    const listSoal = [
+      { q: "Apa kepanjangan HTML?", opts: ["HyperText Markup Language", "High Tech", "Hyperlink"], a: 0 },
+      { q: "Bahasa server-side?", opts: ["CSS", "PHP", "HTML"], a: 1 },
+      { q: "Database relasional?", opts: ["MongoDB", "MySQL", "Redis"], a: 1 }
+    ];
+
+    let htmlUjian = '';
+    listSoal.forEach((s, i) => {
+      htmlUjian += `<div class="quiz-q"><h4>${i+1}. ${s.q}</h4>`;
+      s.opts.forEach((o, j) => {
+        htmlUjian += `<label class="quiz-opt"><input type="radio" name="q${i}" value="${j}" required> ${o}</label>`;
+      });
+      htmlUjian += `</div>`;
+    });
+    htmlUjian += `<button type="submit" class="btn-primary">Kirim Jawaban</button>`;
+    document.getElementById('formUjian').innerHTML = htmlUjian;
+
+    // 9. SELESAI UJIAN
+    window.selesaiUjian = async function(e) {
+      e.preventDefault();
+      let skor = 0;
+      listSoal.forEach((s, i) => {
+        const picked = document.querySelector(`input[name="q${i}"]:checked`);
+        if(picked && parseInt(picked.value) === s.a) skor += 33;
+      });
+      if(skor > 99) skor = 100;
+      
+      await update(ref(db, 'users/' + currentUser.nim), { nilai_ujian: skor });
+      document.getElementById('nUjianDaring').textContent = skor;
+      alert('Ujian Selesai! Nilai Anda: ' + skor);
+      showPage('nilai', document.querySelectorAll('.menu a')[4]);
+    }
+
+    // 10. TAMPILKAN NILAI
+    onValue(ref(db, 'users/' + currentUser.nim), (snap) => {
+      const u = snap.val();
+      if(u) {
+        document.getElementById('nUjianDaring').textContent = u.nilai_ujian || '-';
+      }
+    });
+
+    // 11. TAMPILKAN PENGUMUMAN
+    onValue(ref(db, 'pengumuman'), (snap) => {
+      const data = snap.val();
+      let html = '';
+      if(data) {
+        Object.values(data).reverse().forEach(p => {
+          html += `<div style="padding:15px; border-bottom:1px solid #eee;">
+            <h4>${p.judul}</h4><p style="font-size:14px;">${p.isi}</p>
+            <br><small style="color:gray;">${p.tanggal}</small>
+          </div>`;
+        });
+      }
+      document.getElementById('pengumumanList').innerHTML = html || '<p style="color:gray;">Belum ada pengumuman.</p>';
+    });
+  </script>
+</body>
+</html>
